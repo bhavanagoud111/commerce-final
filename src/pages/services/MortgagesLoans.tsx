@@ -1,19 +1,104 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { ArrowLeft, Home, CheckCircle, Calculator } from "lucide-react";
+import LoanApplicationForm from "@/components/LoanApplicationForm";
+import { ArrowLeft, Home, CheckCircle, Calculator, Phone, Shield, Clock, DollarSign, TrendingUp, FileCheck, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 import mortgagesLoansImage from "@/assets/mortgages-loans.jpg";
 
 const MortgagesLoans = () => {
+  // Loan Application Form State
+  const [isLoanApplicationFormOpen, setIsLoanApplicationFormOpen] = useState(false);
+  const [selectedLoanType, setSelectedLoanType] = useState("");
+
+  // Loan Calculator State
+  const [loanAmount, setLoanAmount] = useState(250000);
+  const [interestRate, setInterestRate] = useState(6.25);
+  const [loanTerm, setLoanTerm] = useState(30);
+  const [loanType, setLoanType] = useState("mortgage");
+  const [monthlyPayment, setMonthlyPayment] = useState(0);
+  const [totalInterest, setTotalInterest] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  // Calculate loan payment using the standard mortgage formula
+  const calculateLoanPayment = () => {
+    const principal = loanAmount;
+    const monthlyRate = interestRate / 100 / 12;
+    const numberOfPayments = loanTerm * 12;
+
+    if (monthlyRate === 0) {
+      // Handle zero interest rate
+      const payment = principal / numberOfPayments;
+      setMonthlyPayment(payment);
+      setTotalInterest(0);
+      setTotalAmount(principal);
+    } else {
+      // Standard mortgage formula
+      const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / 
+                     (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+      
+      setMonthlyPayment(payment);
+      setTotalInterest((payment * numberOfPayments) - principal);
+      setTotalAmount(payment * numberOfPayments);
+    }
+  };
+
+  // Calculate on component mount and when values change
+  useEffect(() => {
+    calculateLoanPayment();
+  }, [loanAmount, interestRate, loanTerm]);
+
+  // Update calculations when inputs change
+  const handleLoanAmountChange = (value) => {
+    setLoanAmount(parseFloat(value) || 0);
+    setTimeout(calculateLoanPayment, 0);
+  };
+
+  const handleInterestRateChange = (value) => {
+    setInterestRate(parseFloat(value) || 0);
+    setTimeout(calculateLoanPayment, 0);
+  };
+
+  const handleLoanTermChange = (value) => {
+    setLoanTerm(parseInt(value) || 0);
+    setTimeout(calculateLoanPayment, 0);
+  };
+
+  const handleLoanTypeChange = (value) => {
+    setLoanType(value);
+    // Set default values based on loan type
+    switch(value) {
+      case "mortgage":
+        setInterestRate(6.25);
+        setLoanTerm(30);
+        break;
+      case "personal":
+        setInterestRate(12.99);
+        setLoanTerm(5);
+        break;
+      case "auto":
+        setInterestRate(5.49);
+        setLoanTerm(5);
+        break;
+      default:
+        break;
+    }
+    setTimeout(calculateLoanPayment, 0);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-16 bg-gradient-to-r from-[hsl(var(--commerce-green))] to-[hsl(var(--commerce-teal))]">
+        <section className="pt-16 pb-16 bg-gradient-to-r from-[hsl(var(--commerce-green))] to-[hsl(var(--commerce-teal))]">
           <div className="container mx-auto px-4">
             <div className="flex items-center mb-6">
               <Link to="/">
@@ -31,9 +116,6 @@ const MortgagesLoans = () => {
                 <p className="text-xl text-white/90 mb-8">
                   Make your dreams come true with our competitive mortgage rates and flexible loan options. From first-time homebuyers to seasoned investors.
                 </p>
-                <Button variant="secondary" size="lg">
-                  Apply for a Loan
-                </Button>
               </div>
               <div className="lg:text-center">
                 <img 
@@ -82,6 +164,18 @@ const MortgagesLoans = () => {
                       <span>Refinancing options</span>
                     </li>
                   </ul>
+                  <div className="mt-6">
+                    <Button 
+                      variant="commerce" 
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedLoanType("Home Equity Loan");
+                        setIsLoanApplicationFormOpen(true);
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -115,6 +209,18 @@ const MortgagesLoans = () => {
                       <span>No origination fees</span>
                     </li>
                   </ul>
+                  <div className="mt-6">
+                    <Button 
+                      variant="commerce" 
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedLoanType("Personal Loan");
+                        setIsLoanApplicationFormOpen(true);
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -148,6 +254,18 @@ const MortgagesLoans = () => {
                       <span>Refinancing options</span>
                     </li>
                   </ul>
+                  <div className="mt-6">
+                    <Button 
+                      variant="commerce" 
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedLoanType("Auto Loan");
+                        setIsLoanApplicationFormOpen(true);
+                      }}
+                    >
+                      Apply Now
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -166,69 +284,240 @@ const MortgagesLoans = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* Loan Type Selection */}
                     <div>
-                      <label className="text-sm font-medium">Loan Amount</label>
-                      <div className="mt-1 p-3 border rounded-md bg-muted">$250,000</div>
+                      <Label htmlFor="loanType">Loan Type</Label>
+                      <Select value={loanType} onValueChange={handleLoanTypeChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mortgage">Home Mortgage</SelectItem>
+                          <SelectItem value="personal">Personal Loan</SelectItem>
+                          <SelectItem value="auto">Auto Loan</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {/* Loan Amount */}
                     <div>
-                      <label className="text-sm font-medium">Interest Rate</label>
-                      <div className="mt-1 p-3 border rounded-md bg-muted">6.25% APR</div>
+                      <Label htmlFor="loanAmount">Loan Amount</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                        <Input
+                          id="loanAmount"
+                          type="number"
+                          value={loanAmount}
+                          onChange={(e) => handleLoanAmountChange(e.target.value)}
+                          className="pl-8"
+                          placeholder="Enter loan amount"
+                        />
+                      </div>
                     </div>
+
+                    {/* Interest Rate */}
                     <div>
-                      <label className="text-sm font-medium">Term</label>
-                      <div className="mt-1 p-3 border rounded-md bg-muted">30 years</div>
+                      <Label htmlFor="interestRate">Interest Rate (% APR)</Label>
+                      <div className="relative">
+                        <Input
+                          id="interestRate"
+                          type="number"
+                          step="0.01"
+                          value={interestRate}
+                          onChange={(e) => handleInterestRateChange(e.target.value)}
+                          placeholder="Enter interest rate"
+                        />
+                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                      </div>
                     </div>
-                    <div className="pt-4 border-t">
-                      <div className="text-lg font-semibold">Estimated Monthly Payment:</div>
-                      <div className="text-2xl font-bold text-[hsl(var(--commerce-green))]">$1,539</div>
+
+                    {/* Loan Term */}
+                    <div>
+                      <Label htmlFor="loanTerm">Loan Term</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="loanTerm"
+                          type="number"
+                          value={loanTerm}
+                          onChange={(e) => handleLoanTermChange(e.target.value)}
+                          placeholder="Enter term"
+                          className="flex-1"
+                        />
+                        <Select value={loanType === "mortgage" ? "years" : loanType === "auto" ? "years" : "years"} disabled>
+                          <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="years">Years</SelectItem>
+                            <SelectItem value="months">Months</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <Button variant="commerce" className="w-full">
-                      Use Interactive Calculator
-                    </Button>
+
+                    {/* Calculation Results */}
+                    <div className="pt-4 border-t space-y-3">
+                      <div className="bg-green-50 rounded-lg p-4">
+                        <div className="text-lg font-semibold text-gray-900">Monthly Payment</div>
+                        <div className="text-2xl font-bold text-[hsl(var(--commerce-green))]">
+                          ${monthlyPayment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-gray-600">Total Interest</div>
+                          <div className="font-semibold text-gray-900">
+                            ${totalInterest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="text-gray-600">Total Amount</div>
+                          <div className="font-semibold text-gray-900">
+                            ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => {
+                          setLoanAmount(250000);
+                          setInterestRate(6.25);
+                          setLoanTerm(30);
+                          setLoanType("mortgage");
+                        }}
+                      >
+                        Reset
+                      </Button>
+                      <Button 
+                        variant="commerce" 
+                        className="flex-1"
+                        onClick={() => {
+                          // Map calculator loan type to form loan type
+                          let loanTypeName = "";
+                          switch(loanType) {
+                            case "mortgage":
+                              loanTypeName = "Home Equity Loan";
+                              break;
+                            case "personal":
+                              loanTypeName = "Personal Loan";
+                              break;
+                            case "auto":
+                              loanTypeName = "Auto Loan";
+                              break;
+                            default:
+                              loanTypeName = "Personal Loan";
+                          }
+                          setSelectedLoanType(loanTypeName);
+                          setIsLoanApplicationFormOpen(true);
+                        }}
+                      >
+                        Apply for This Loan
+                      </Button>
+                    </div>
+
+                    {/* Helpful Tips */}
+                    <div className="bg-blue-50 rounded-lg p-3 text-sm">
+                      <h4 className="font-semibold text-blue-900 mb-2">💡 Calculator Tips:</h4>
+                      <ul className="text-blue-800 space-y-1">
+                        <li>• This calculator provides estimates only</li>
+                        <li>• Actual rates may vary based on credit score</li>
+                        <li>• Additional fees may apply</li>
+                        <li>• Contact us for personalized quotes</li>
+                      </ul>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Simple Application Process</CardTitle>
+                  <CardTitle>Why Choose Commerce Bank for Loans?</CardTitle>
                   <CardDescription>
-                    Get approved in as little as 24 hours with our streamlined process.
+                    Experience exceptional service, competitive rates, and personalized solutions.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 w-8 h-8 bg-[hsl(var(--commerce-green))] text-white rounded-full flex items-center justify-center font-semibold mr-4">1</div>
-                      <div>
-                        <h4 className="font-semibold">Apply Online</h4>
-                        <p className="text-sm text-muted-foreground">Complete our secure online application in minutes.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 w-8 h-8 bg-[hsl(var(--commerce-green))] text-white rounded-full flex items-center justify-center font-semibold mr-4">2</div>
-                      <div>
-                        <h4 className="font-semibold">Get Pre-Approved</h4>
-                        <p className="text-sm text-muted-foreground">Receive your pre-approval decision within 24 hours.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 w-8 h-8 bg-[hsl(var(--commerce-green))] text-white rounded-full flex items-center justify-center font-semibold mr-4">3</div>
-                      <div>
-                        <h4 className="font-semibold">Close Your Loan</h4>
-                        <p className="text-sm text-muted-foreground">Work with our team to finalize your loan details.</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" className="w-full">
-                      Start Application
-                    </Button>
+                    {[
+                      {
+                        icon: Clock,
+                        title: "Fast Approval Process",
+                        description: "Get pre-approved in as little as 24 hours with our streamlined online application.",
+                        color: "text-blue-600",
+                        bgColor: "bg-blue-50"
+                      },
+                      {
+                        icon: DollarSign,
+                        title: "Competitive Rates",
+                        description: "Low interest rates and flexible terms tailored to your financial situation and credit profile.",
+                        color: "text-green-600",
+                        bgColor: "bg-green-50"
+                      },
+                      {
+                        icon: Shield,
+                        title: "Secure & Trusted",
+                        description: "Bank with confidence knowing your information is protected with industry-leading security.",
+                        color: "text-purple-600",
+                        bgColor: "bg-purple-50"
+                      },
+                      {
+                        icon: Users,
+                        title: "Expert Guidance",
+                        description: "Work with our experienced loan specialists who will guide you through every step of the process.",
+                        color: "text-orange-600",
+                        bgColor: "bg-orange-50"
+                      },
+                      {
+                        icon: FileCheck,
+                        title: "No Hidden Fees",
+                        description: "Transparent pricing with no origination fees, prepayment penalties, or surprise charges.",
+                        color: "text-teal-600",
+                        bgColor: "bg-teal-50"
+                      },
+                      {
+                        icon: TrendingUp,
+                        title: "Build Your Credit",
+                        description: "Responsible borrowing can help improve your credit score and financial future.",
+                        color: "text-pink-600",
+                        bgColor: "bg-pink-50"
+                      }
+                    ].map((benefit, idx) => {
+                      const IconComponent = benefit.icon;
+                      return (
+                        <div key={idx} className={`flex items-start p-4 rounded-lg ${benefit.bgColor} hover:shadow-md transition-shadow`}>
+                          <div className={`flex-shrink-0 p-2 ${benefit.bgColor} rounded-lg mr-4`}>
+                            <IconComponent className={`h-5 w-5 ${benefit.color}`} />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-1">{benefit.title}</h4>
+                            <p className="text-sm text-gray-700">{benefit.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
             <div className="text-center">
-              <Button variant="commerce" size="lg" className="text-lg px-8">
+              <Button 
+                variant="commerce" 
+                size="lg" 
+                className="text-lg px-8"
+                onClick={() => {
+                  toast({
+                    title: "Loan Specialist Contact",
+                    description: "Call us at 1-800-LOANS-CB or email loans@commercebank.com. Our specialists are available Monday-Friday 8 AM - 8 PM EST.",
+                  });
+                }}
+              >
+                <Phone className="h-5 w-5 mr-2" />
                 Speak with a Loan Specialist
               </Button>
             </div>
@@ -237,6 +526,16 @@ const MortgagesLoans = () => {
       </main>
 
       <Footer />
+
+      {/* Loan Application Form Modal */}
+      <LoanApplicationForm 
+        isOpen={isLoanApplicationFormOpen} 
+        onClose={() => {
+          setIsLoanApplicationFormOpen(false);
+          setSelectedLoanType("");
+        }}
+        loanType={selectedLoanType}
+      />
     </div>
   );
 };

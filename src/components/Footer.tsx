@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Facebook, Twitter, Linkedin, Youtube, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 const Footer = () => {
   return (
     <footer className="bg-[hsl(var(--commerce-green))] text-white">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {/* Company Info */}
           <div>
             <div className="flex items-center space-x-2 mb-6">
@@ -20,72 +21,27 @@ const Footer = () => {
             <p className="text-white/80 mb-6">
               Your trusted financial partner for over 150 years. FDIC insured and committed to your financial success.
             </p>
-            <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="text-white hover:text-[hsl(var(--commerce-teal))] hover:bg-white/10">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-white hover:text-[hsl(var(--commerce-teal))] hover:bg-white/10">
-                <Twitter className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-white hover:text-[hsl(var(--commerce-teal))] hover:bg-white/10">
-                <Linkedin className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-white hover:text-[hsl(var(--commerce-teal))] hover:bg-white/10">
-                <Youtube className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-white hover:text-[hsl(var(--commerce-teal))] hover:bg-white/10">
-                <Instagram className="h-5 w-5" />
-              </Button>
-            </div>
           </div>
 
-          {/* Personal Banking */}
+          {/* About Us */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Personal Banking</h4>
+            <h4 className="text-lg font-semibold mb-4">About Us</h4>
             <ul className="space-y-3 text-white/80">
-              <li><a href="#" className="hover:text-white transition-colors">Checking Accounts</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Savings Accounts</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Credit Cards</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Personal Loans</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Mortgages</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Auto Loans</a></li>
-            </ul>
-          </div>
-
-          {/* Business & Investment */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Business & Investment</h4>
-            <ul className="space-y-3 text-white/80">
-              <li><a href="#" className="hover:text-white transition-colors">Business Banking</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Commercial Loans</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Investment Services</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Wealth Management</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Trust Services</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Retirement Planning</a></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">Our Story</Link></li>
+              <li><Link to="/leadership" className="hover:text-white transition-colors">Leadership Team</Link></li>
+              <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+              <li><Link to="/news" className="hover:text-white transition-colors">News & Updates</Link></li>
             </ul>
           </div>
 
           {/* Support & Resources */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Support & Resources</h4>
-            <ul className="space-y-3 text-white/80 mb-6">
-              <li><a href="#" className="hover:text-white transition-colors">Customer Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Find Locations</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Security Center</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Ideas & Tips</a></li>
+            <ul className="space-y-3 text-white/80">
+              <li><Link to="/locations" className="hover:text-white transition-colors">Find Locations</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+              <li><Link to="/security" className="hover:text-white transition-colors">Security Center</Link></li>
             </ul>
-            
-            <div>
-              <p className="text-sm text-white/80 mb-3">Stay updated with our newsletter</p>
-              <div className="flex space-x-2">
-                <Input 
-                  placeholder="Enter email" 
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/60"
-                />
-                <Button variant="secondary" size="sm">Subscribe</Button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -93,11 +49,11 @@ const Footer = () => {
         <div className="border-t border-white/20 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex flex-wrap gap-6 text-sm text-white/80">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Accessibility</a>
-              <a href="#" className="hover:text-white transition-colors">Disclosures</a>
-              <a href="#" className="hover:text-white transition-colors">Site Map</a>
+              <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/accessibility" className="hover:text-white transition-colors">Accessibility</Link>
+              <Link to="/disclosures" className="hover:text-white transition-colors">Disclosures</Link>
+              <Link to="/site-map" className="hover:text-white transition-colors">Site Map</Link>
             </div>
             <div className="text-sm text-white/80">
               <p>© 2024 Commerce Bank. All rights reserved.</p>

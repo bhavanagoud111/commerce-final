@@ -1,247 +1,524 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect, useRef } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, Eye, EyeOff, CheckCircle, XCircle, Shield } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
 const HeroSection = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedTopic, setSelectedTopic] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const { toast } = useToast();
   const [isRegistrationOpen, setIsRegistrationOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false);
+  const REGISTRATION_API_ENDPOINT = 'http://localhost:3001';
 
   // Registration form state
   const [registrationData, setRegistrationData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
-    phone: "",
-    dateOfBirth: "",
-    ssn: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    employmentStatus: "",
-    annualIncome: "",
-    accountType: "",
     username: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false,
-    agreeToMarketing: false
+    password: ""
   });
 
-  const bankingTopics = [
-    { value: "checking-accounts", label: "Checking Accounts", description: "Manage your everyday banking needs" },
-    { value: "savings-accounts", label: "Savings Accounts", description: "Grow your money with competitive rates" },
-    { value: "credit-cards", label: "Credit Cards", description: "Rewards, cashback, and travel benefits" },
-    { value: "mortgages", label: "Mortgages & Home Loans", description: "Buy or refinance your home" },
-    { value: "auto-loans", label: "Auto Loans", description: "Finance your next vehicle" },
-    { value: "personal-loans", label: "Personal Loans", description: "Consolidate debt or fund major purchases" },
-    { value: "business-banking", label: "Business Banking", description: "Solutions for your business needs" },
-    { value: "investment-services", label: "Investment Services", description: "Grow your wealth with professional guidance" },
-    { value: "wealth-management", label: "Wealth Management", description: "Comprehensive financial planning" },
-    { value: "retirement-planning", label: "Retirement Planning", description: "Secure your financial future" },
-    { value: "insurance", label: "Insurance", description: "Protect what matters most" },
-    { value: "digital-banking", label: "Digital Banking", description: "Banking on the go with our mobile app" },
-    { value: "online-security", label: "Online Security", description: "Keep your accounts safe and secure" },
-    { value: "student-banking", label: "Student Banking", description: "Special accounts and services for students" },
-    { value: "senior-banking", label: "Senior Banking", description: "Tailored services for seniors" },
-    { value: "international-banking", label: "International Banking", description: "Global banking solutions" },
-    { value: "merchant-services", label: "Merchant Services", description: "Payment processing for businesses" },
-    { value: "treasury-management", label: "Treasury Management", description: "Advanced cash management solutions" }
-  ];
+  // Password validation state
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    lowercase: false,
+    uppercase: false,
+    number: false,
+    special: false
+  });
 
-  const handleTopicSelect = (topic: string) => {
-    setSelectedTopic(topic);
-    setIsDropdownOpen(false);
-  };
+  // Login form state
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: ""
+  });
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [requiresOTP, setRequiresOTP] = useState(false);
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+
 
   const handleRegistrationChange = (field: string, value: string | boolean) => {
     setRegistrationData(prev => ({
       ...prev,
       [field]: value
     }));
+
+    // Validate password when password field changes
+    if (field === 'password' && typeof value === 'string') {
+      const password = value;
+      setPasswordValidation({
+        length: password.length >= 8,
+        lowercase: /[a-z]/.test(password),
+        uppercase: /[A-Z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)
+      });
+    }
   };
 
-  const handleRegistrationSubmit = (e: React.FormEvent) => {
+  const handleLoginChange = (field: string, value: string) => {
+    setLoginData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log("Registration data:", registrationData);
-    alert("Registration submitted successfully! You will receive a confirmation email shortly.");
-    setIsRegistrationOpen(false);
-    // Reset form
-    setRegistrationData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      dateOfBirth: "",
-      ssn: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      employmentStatus: "",
-      annualIncome: "",
-      accountType: "",
-      username: "",
-      password: "",
-      confirmPassword: "",
-      agreeToTerms: false,
-      agreeToMarketing: false
-    });
+    if (isLoginSubmitting) return;
+    setIsLoginSubmitting(true);
+    
+    try {
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`${REGISTRATION_API_ENDPOINT}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(loginData),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      const result = await response.json();
+      console.log('Login response:', result);
+
+      if (result.success) {
+        // Check if OTP is required
+        if (result.requiresOTP) {
+          setRequiresOTP(true);
+          setOtpEmail(result.email || "");
+          toast({
+            title: "OTP Sent",
+            description: "Please check your email for the OTP code to complete login.",
+          });
+        } else {
+          // Direct login (shouldn't happen with new flow, but handle it)
+          console.log('Login successful, setting auth state...');
+          login(result.user, result.token);
+
+          toast({
+            title: "Welcome back!",
+            description: `Signed in as ${result.user?.name ?? result.user?.username ?? "member"}.`,
+          });
+
+          console.log('Navigating to dashboard...');
+          setTimeout(() => {
+            navigate('/dashboard');
+            console.log('Navigation called');
+          }, 400);
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: result.message || "Please check your credentials and try again.",
+        });
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        toast({
+          variant: "destructive",
+          title: "Request timed out",
+          description: "The login request took too long. Please try again.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: err?.message || "A network error occurred. Please try again shortly.",
+        });
+      }
+    } finally {
+      setIsLoginSubmitting(false);
+    }
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
+  const handleOTPVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isVerifyingOTP || !otpCode) return;
+    setIsVerifyingOTP(true);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    try {
+      const response = await fetch(`${REGISTRATION_API_ENDPOINT}/verify-login-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          email: otpEmail,
+          otp: otpCode
+        })
+      });
+
+      const result = await response.json();
+      console.log('OTP verification response:', result);
+
+      if (result.success) {
+        console.log('OTP verified, completing login...');
+        login(result.user, result.token);
+
+        toast({
+          title: "Welcome back!",
+          description: `Signed in as ${result.user?.name ?? result.user?.username ?? "member"}.`,
+        });
+
+        // Reset OTP state
+        setRequiresOTP(false);
+        setOtpCode("");
+        setOtpEmail("");
+
+        console.log('Navigating to dashboard...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 400);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "OTP Verification Failed",
+          description: result.message || "Invalid OTP. Please try again.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: err?.message || "An error occurred. Please try again.",
+      });
+    } finally {
+      setIsVerifyingOTP(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    // Re-submit login to get new OTP
+    setOtpCode("");
+    const response = await fetch(`${REGISTRATION_API_ENDPOINT}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(loginData)
+    });
+
+    const result = await response.json();
+    if (result.success && result.requiresOTP) {
+      toast({
+        title: "OTP Resent",
+        description: "A new OTP has been sent to your email.",
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Failed to Resend",
+        description: "Please try logging in again.",
+      });
+    }
+  };
+
+  const handleRegistrationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    
+    const allRequirementsMet = Object.values(passwordValidation).every(requirement => requirement);
+    if (!allRequirementsMet) {
+      toast({
+        variant: "destructive",
+        title: "Password needs attention",
+        description: "Please ensure your password meets all the listed requirements.",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${REGISTRATION_API_ENDPOINT}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(registrationData)
+      });
+
+      const result = await response.json();
+      console.log('Registration response:', result);
+
+      if (result.success) {
+        toast({
+          title: "Account created!",
+          description: "Your Commerce Bank profile is ready. You can log in with your new credentials.",
+        });
+        setIsRegistrationOpen(false);
+        setRegistrationData({
+          name: "",
+          email: "",
+          username: "",
+          password: ""
+        });
+        setPasswordValidation({
+          length: false,
+          lowercase: false,
+          uppercase: false,
+          number: false,
+          special: false
+        });
+        setShowPassword(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: result.message || "Please review your details and try again.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: err?.message || "Something went wrong while creating your account.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <section className="relative min-h-[600px] overflow-hidden bg-gradient-to-br from-[hsl(var(--commerce-teal))] via-[hsl(var(--commerce-light-blue))] to-[hsl(var(--commerce-yellow))]">
-      {/* Organic Shapes Background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-[hsl(var(--commerce-green))] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[hsl(var(--commerce-yellow))] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-1000"></div>
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-[hsl(var(--commerce-teal))] rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-500"></div>
-      </div>
+    <>
+      <section 
+        className="relative min-h-[600px] overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('https://mybank.com/wp-content/uploads/iStock-1461655919.jpg')`,
+        }}
+      >
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/60 via-slate-800/50 to-slate-900/60"></div>
+        
+        {/* Organic Shapes Background Overlay */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-[hsl(var(--commerce-green))] rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[hsl(var(--commerce-yellow))] rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse delay-1000"></div>
+          <div className="absolute -bottom-8 left-1/2 w-96 h-96 bg-[hsl(var(--commerce-teal))] rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse delay-500"></div>
+        </div>
 
-      <div className="relative container mx-auto px-4 py-20">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-white">
-            <h1 className="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              How can we help?
-            </h1>
-            <div className="flex items-center mb-8">
-              <span className="text-xl mr-4">I want to...</span>
-              <div className="relative" ref={dropdownRef}>
-                <Button 
-                  variant="commerce-outline" 
-                  className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-[hsl(var(--commerce-green))] flex items-center"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                  {selectedTopic ? bankingTopics.find(t => t.value === selectedTopic)?.label : "select a topic"}
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-                
-                {isDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-2">
-                      {bankingTopics.map((topic) => (
-                        <button
-                          key={topic.value}
-                          className="w-full text-left p-3 hover:bg-gray-50 rounded-md transition-colors"
-                          onClick={() => handleTopicSelect(topic.value)}
-                        >
-                          <div className="font-medium text-gray-900">{topic.label}</div>
-                          <div className="text-sm text-gray-600">{topic.description}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Content - Login Card */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-[var(--shadow-elevated)]">
-            <div className="text-center mb-6">
-              <div className="flex justify-center items-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-[hsl(var(--commerce-teal))] to-[hsl(var(--commerce-light-blue))] rounded-full flex items-center justify-center mr-3">
-                  <div className="w-8 h-8 bg-white rounded-full"></div>
-                </div>
-                <div className="w-8 h-8 bg-[hsl(var(--commerce-green))] rounded-full"></div>
-              </div>
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
-                Log in to Online Banking
-              </h2>
-              <p className="text-muted-foreground">or select an account:</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Select your account type
-                </label>
-                <Select defaultValue="online-banking">
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="online-banking">Online Banking</SelectItem>
-                    <SelectItem value="credit-cards">Credit Cards</SelectItem>
-                    <SelectItem value="spending-card">mySpending Card®</SelectItem>
-                    <SelectItem value="mortgage">Mortgage Loans</SelectItem>
-                    <SelectItem value="health-financing">Health Services Financing</SelectItem>
-                    <SelectItem value="health-payment">Health Payment Plan</SelectItem>
-                    <SelectItem value="wealth-manager">Commerce Trust Wealth Manager</SelectItem>
-                    <SelectItem value="brokerage">Brokerage Account</SelectItem>
-                    <SelectItem value="student-loans">Student Loans</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Customer ID
-                </label>
-                <Input 
-                  placeholder="Enter Customer ID" 
-                  className="w-full"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Password
-                </label>
-                <Input 
-                  type="password"
-                  placeholder="Enter Password" 
-                  className="w-full"
-                />
-              </div>
-
-              <Button 
-                variant="commerce" 
-                className="w-full h-12 text-lg font-semibold"
-                onClick={() => window.location.href = '/dashboard'}
-              >
-                Log In
-              </Button>
-
-              <div className="text-center mt-4">
-                <p className="text-sm text-muted-foreground">
-                  New customer?{" "}
-                  <button 
-                    onClick={() => setIsRegistrationOpen(true)}
-                    className="text-[hsl(var(--commerce-green))] hover:underline font-medium"
-                  >
-                    Register
-                  </button>
+        <div className="relative z-10 container mx-auto px-4 py-16">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Side - Welcome Message */}
+            <div className="text-white space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
+                  Welcome back
+                </h1>
+                <p className="text-xl lg:text-2xl text-white/90 leading-relaxed">
+                  Log in or create your account to continue.
                 </p>
+              </div>
+            </div>
+
+            {/* Right Side - Login Form */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/30 via-white/10 to-white/30 blur-2xl opacity-80" />
+              <div className="relative overflow-hidden rounded-[28px] border border-white/30 bg-white/95 shadow-[0_25px_60px_-20px_rgba(16,24,40,0.35)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_70px_-25px_rgba(16,24,40,0.45)]">
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[hsl(var(--commerce-teal))] via-[hsl(var(--commerce-green))] to-[hsl(var(--commerce-teal))]" />
+                <div className="absolute -left-16 top-12 h-32 w-32 rounded-full bg-[hsl(var(--commerce-green)_/_0.12)] blur-3xl" />
+                <div className="absolute -right-12 bottom-10 h-32 w-32 rounded-full bg-[hsl(var(--commerce-teal)_/_0.12)] blur-3xl" />
+
+                <div className="relative z-10 p-10">
+                  <div className="text-center mb-8 space-y-4 animate-in fade-in zoom-in">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-[hsl(var(--commerce-green))/0.2] bg-[hsl(var(--commerce-green)_/_0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[hsl(var(--commerce-green))] shadow-sm">
+                      Secure Access
+                    </div>
+                    <div className="flex items-center justify-center space-x-3">
+                      <div className="h-3 w-12 rounded-full bg-gradient-to-r from-[hsl(var(--commerce-teal))] to-[hsl(var(--commerce-green))]" />
+                      <div className="h-3 w-3 rounded-full bg-[hsl(var(--commerce-green))]" />
+                      <div className="h-3 w-3 rounded-full bg-[hsl(var(--commerce-teal))]" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-foreground">
+                      Log in to Online Banking
+                    </h2>
+                    <p className="text-muted-foreground">
+                      Seamless experience with enterprise-grade security
+                    </p>
+                  </div>
+
+                  {!requiresOTP ? (
+                    <form onSubmit={handleLoginSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Username
+                      </label>
+                      <div className="relative">
+                        <Input
+                          placeholder="Enter your username"
+                          className="w-full rounded-xl border-muted bg-white/70 py-6 text-base shadow-inner transition focus:border-[hsl(var(--commerce-green))] focus:bg-white"
+                          value={loginData.username}
+                          onChange={(e) => handleLoginChange('username', e.target.value)}
+                          required
+                        />
+                        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[hsl(var(--commerce-green))]/70">
+                          <span className="h-2 w-2 rounded-full bg-current shadow-inner" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type={showLoginPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          className="w-full rounded-xl border-muted bg-white/70 py-6 text-base shadow-inner transition focus:border-[hsl(var(--commerce-green))] focus:bg-white"
+                          value={loginData.password}
+                          onChange={(e) => handleLoginChange('password', e.target.value)}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-[hsl(var(--commerce-green))]"
+                        >
+                          {showLoginPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--commerce-teal))/0.2] bg-[hsl(var(--commerce-teal)_/_0.1)] px-3 py-1 text-[hsl(var(--commerce-teal))]">
+                        <Shield className="h-3.5 w-3.5" />
+                        256-bit encrypted session
+                      </div>
+                      <button type="button" className="font-medium text-[hsl(var(--commerce-green))] hover:underline">
+                        Forgot password?
+                      </button>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="commerce"
+                      className="w-full h-12 text-lg font-semibold shadow-lg shadow-[hsl(var(--commerce-green))]/30"
+                      disabled={isLoginSubmitting}
+                    >
+                      {isLoginSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Logging In...
+                        </>
+                      ) : (
+                        'Log In'
+                      )}
+                    </Button>
+                  </form>
+                  ) : (
+                    <form onSubmit={handleOTPVerify} className="space-y-5">
+                      <div className="text-center mb-4">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-[hsl(var(--commerce-teal))/0.2] bg-[hsl(var(--commerce-teal)_/_0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[hsl(var(--commerce-teal))]">
+                          <Shield className="h-3.5 w-3.5" />
+                          Two-Factor Authentication
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-3">
+                          We've sent a 6-digit code to your email. Please enter it below to complete your login.
+                        </p>
+                        {otpEmail && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Code sent to: <span className="font-medium">{otpEmail}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Enter OTP Code
+                        </label>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={6}
+                          placeholder="000000"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          className="w-full rounded-xl border-muted bg-white/70 py-6 text-center text-2xl font-mono tracking-widest shadow-inner transition focus:border-[hsl(var(--commerce-green))] focus:bg-white"
+                          required
+                          autoFocus
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        variant="commerce"
+                        className="w-full h-12 text-lg font-semibold shadow-lg shadow-[hsl(var(--commerce-green))]/30"
+                        disabled={isVerifyingOTP || otpCode.length !== 6}
+                      >
+                        {isVerifyingOTP ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          'Verify & Login'
+                        )}
+                      </Button>
+
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={handleResendOTP}
+                          className="text-sm font-medium text-[hsl(var(--commerce-green))] hover:underline"
+                        >
+                          Didn't receive the code? Resend
+                        </button>
+                      </div>
+
+                      <div className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRequiresOTP(false);
+                            setOtpCode("");
+                            setOtpEmail("");
+                          }}
+                          className="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          ← Back to login
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  <div className="mt-6 rounded-2xl bg-gradient-to-r from-[hsl(var(--commerce-green)_/_0.08)] to-transparent p-5 text-center text-sm text-muted-foreground">
+                    <p>
+                      New to Commerce Bank?{' '}
+                      <button
+                        onClick={() => setIsRegistrationOpen(true)}
+                        className="font-semibold text-[hsl(var(--commerce-green))] underline-offset-4 transition hover:text-[hsl(var(--commerce-teal))] hover:underline"
+                      >
+                        Create an account
+                      </button>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Registration Modal */}
       <Dialog open={isRegistrationOpen} onOpenChange={setIsRegistrationOpen}>
@@ -255,308 +532,152 @@ const HeroSection = () => {
           <form onSubmit={handleRegistrationSubmit} className="space-y-6">
             {/* Personal Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-[hsl(var(--commerce-green))] border-b pb-2">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
                 Personal Information
               </h3>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="firstName">First Name *</Label>
+                  <Label htmlFor="name">Full Name *</Label>
                   <Input
-                    id="firstName"
-                    value={registrationData.firstName}
-                    onChange={(e) => handleRegistrationChange("firstName", e.target.value)}
+                    id="name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={registrationData.name}
+                    onChange={(e) => handleRegistrationChange('name', e.target.value)}
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={registrationData.lastName}
-                    onChange={(e) => handleRegistrationChange("lastName", e.target.value)}
-                    required
-                  />
-                </div>
+                
                 <div>
                   <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     type="email"
+                    placeholder="Enter your email"
                     value={registrationData.email}
-                    onChange={(e) => handleRegistrationChange("email", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={registrationData.phone}
-                    onChange={(e) => handleRegistrationChange("phone", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    value={registrationData.dateOfBirth}
-                    onChange={(e) => handleRegistrationChange("dateOfBirth", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ssn">Social Security Number *</Label>
-                  <Input
-                    id="ssn"
-                    type="password"
-                    placeholder="XXX-XX-XXXX"
-                    value={registrationData.ssn}
-                    onChange={(e) => handleRegistrationChange("ssn", e.target.value)}
+                    onChange={(e) => handleRegistrationChange('email', e.target.value)}
                     required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Address Information */}
+            {/* Account Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-[hsl(var(--commerce-green))] border-b pb-2">
-                Address Information
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                Account Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="address">Street Address *</Label>
-                  <Input
-                    id="address"
-                    value={registrationData.address}
-                    onChange={(e) => handleRegistrationChange("address", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="city">City *</Label>
-                  <Input
-                    id="city"
-                    value={registrationData.city}
-                    onChange={(e) => handleRegistrationChange("city", e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="state">State *</Label>
-                  <Select value={registrationData.state} onValueChange={(value) => handleRegistrationChange("state", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select State" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AL">Alabama</SelectItem>
-                      <SelectItem value="AK">Alaska</SelectItem>
-                      <SelectItem value="AZ">Arizona</SelectItem>
-                      <SelectItem value="AR">Arkansas</SelectItem>
-                      <SelectItem value="CA">California</SelectItem>
-                      <SelectItem value="CO">Colorado</SelectItem>
-                      <SelectItem value="CT">Connecticut</SelectItem>
-                      <SelectItem value="DE">Delaware</SelectItem>
-                      <SelectItem value="FL">Florida</SelectItem>
-                      <SelectItem value="GA">Georgia</SelectItem>
-                      <SelectItem value="HI">Hawaii</SelectItem>
-                      <SelectItem value="ID">Idaho</SelectItem>
-                      <SelectItem value="IL">Illinois</SelectItem>
-                      <SelectItem value="IN">Indiana</SelectItem>
-                      <SelectItem value="IA">Iowa</SelectItem>
-                      <SelectItem value="KS">Kansas</SelectItem>
-                      <SelectItem value="KY">Kentucky</SelectItem>
-                      <SelectItem value="LA">Louisiana</SelectItem>
-                      <SelectItem value="ME">Maine</SelectItem>
-                      <SelectItem value="MD">Maryland</SelectItem>
-                      <SelectItem value="MA">Massachusetts</SelectItem>
-                      <SelectItem value="MI">Michigan</SelectItem>
-                      <SelectItem value="MN">Minnesota</SelectItem>
-                      <SelectItem value="MS">Mississippi</SelectItem>
-                      <SelectItem value="MO">Missouri</SelectItem>
-                      <SelectItem value="MT">Montana</SelectItem>
-                      <SelectItem value="NE">Nebraska</SelectItem>
-                      <SelectItem value="NV">Nevada</SelectItem>
-                      <SelectItem value="NH">New Hampshire</SelectItem>
-                      <SelectItem value="NJ">New Jersey</SelectItem>
-                      <SelectItem value="NM">New Mexico</SelectItem>
-                      <SelectItem value="NY">New York</SelectItem>
-                      <SelectItem value="NC">North Carolina</SelectItem>
-                      <SelectItem value="ND">North Dakota</SelectItem>
-                      <SelectItem value="OH">Ohio</SelectItem>
-                      <SelectItem value="OK">Oklahoma</SelectItem>
-                      <SelectItem value="OR">Oregon</SelectItem>
-                      <SelectItem value="PA">Pennsylvania</SelectItem>
-                      <SelectItem value="RI">Rhode Island</SelectItem>
-                      <SelectItem value="SC">South Carolina</SelectItem>
-                      <SelectItem value="SD">South Dakota</SelectItem>
-                      <SelectItem value="TN">Tennessee</SelectItem>
-                      <SelectItem value="TX">Texas</SelectItem>
-                      <SelectItem value="UT">Utah</SelectItem>
-                      <SelectItem value="VT">Vermont</SelectItem>
-                      <SelectItem value="VA">Virginia</SelectItem>
-                      <SelectItem value="WA">Washington</SelectItem>
-                      <SelectItem value="WV">West Virginia</SelectItem>
-                      <SelectItem value="WI">Wisconsin</SelectItem>
-                      <SelectItem value="WY">Wyoming</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="zipCode">ZIP Code *</Label>
-                  <Input
-                    id="zipCode"
-                    value={registrationData.zipCode}
-                    onChange={(e) => handleRegistrationChange("zipCode", e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-[hsl(var(--commerce-green))] border-b pb-2">
-                Financial Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="employmentStatus">Employment Status *</Label>
-                  <Select value={registrationData.employmentStatus} onValueChange={(value) => handleRegistrationChange("employmentStatus", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Employment Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employed">Employed</SelectItem>
-                      <SelectItem value="self-employed">Self-Employed</SelectItem>
-                      <SelectItem value="unemployed">Unemployed</SelectItem>
-                      <SelectItem value="retired">Retired</SelectItem>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="annualIncome">Annual Income *</Label>
-                  <Select value={registrationData.annualIncome} onValueChange={(value) => handleRegistrationChange("annualIncome", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Income Range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="under-25k">Under $25,000</SelectItem>
-                      <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
-                      <SelectItem value="50k-75k">$50,000 - $75,000</SelectItem>
-                      <SelectItem value="75k-100k">$75,000 - $100,000</SelectItem>
-                      <SelectItem value="100k-150k">$100,000 - $150,000</SelectItem>
-                      <SelectItem value="150k-200k">$150,000 - $200,000</SelectItem>
-                      <SelectItem value="over-200k">Over $200,000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="accountType">Preferred Account Type *</Label>
-                  <Select value={registrationData.accountType} onValueChange={(value) => handleRegistrationChange("accountType", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Account Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="checking">Checking Account</SelectItem>
-                      <SelectItem value="savings">Savings Account</SelectItem>
-                      <SelectItem value="both">Both Checking & Savings</SelectItem>
-                      <SelectItem value="business">Business Account</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Login Credentials */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-[hsl(var(--commerce-green))] border-b pb-2">
-                Login Credentials
-              </h3>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="username">Username *</Label>
                   <Input
                     id="username"
+                    type="text"
+                    placeholder="Choose a username"
                     value={registrationData.username}
-                    onChange={(e) => handleRegistrationChange("username", e.target.value)}
+                    onChange={(e) => handleRegistrationChange('username', e.target.value)}
                     required
                   />
                 </div>
+                
                 <div>
                   <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={registrationData.password}
-                    onChange={(e) => handleRegistrationChange("password", e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a strong password"
+                      value={registrationData.password}
+                      onChange={(e) => handleRegistrationChange('password', e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  
+                  {/* Password Requirements */}
+                  <div className="mt-3 space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Password Requirements:</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        {passwordValidation.length ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm ${passwordValidation.length ? 'text-green-600' : 'text-red-600'}`}>
+                          At least 8 characters
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {passwordValidation.lowercase ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm ${passwordValidation.lowercase ? 'text-green-600' : 'text-red-600'}`}>
+                          At least one lowercase letter (a-z)
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {passwordValidation.uppercase ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm ${passwordValidation.uppercase ? 'text-green-600' : 'text-red-600'}`}>
+                          At least one uppercase letter (A-Z)
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {passwordValidation.number ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm ${passwordValidation.number ? 'text-green-600' : 'text-red-600'}`}>
+                          At least one number (0-9)
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {passwordValidation.special ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={`text-sm ${passwordValidation.special ? 'text-green-600' : 'text-red-600'}`}>
+                          At least one special character (!@#$%^&*()_+-=[]{}|;':",./&lt;&gt;?~`)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={registrationData.confirmPassword}
-                    onChange={(e) => handleRegistrationChange("confirmPassword", e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="space-y-4">
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToTerms"
-                  checked={registrationData.agreeToTerms}
-                  onCheckedChange={(checked) => handleRegistrationChange("agreeToTerms", checked as boolean)}
-                  required
-                />
-                <Label htmlFor="agreeToTerms" className="text-sm">
-                  I agree to the <a href="#" className="text-[hsl(var(--commerce-green))] hover:underline">Terms and Conditions</a> and <a href="#" className="text-[hsl(var(--commerce-green))] hover:underline">Privacy Policy</a> *
-                </Label>
-              </div>
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToMarketing"
-                  checked={registrationData.agreeToMarketing}
-                  onCheckedChange={(checked) => handleRegistrationChange("agreeToMarketing", checked as boolean)}
-                />
-                <Label htmlFor="agreeToMarketing" className="text-sm">
-                  I would like to receive marketing communications and updates from Commerce Bank
-                </Label>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsRegistrationOpen(false)}
-              >
-                Cancel
-              </Button>
+            <div className="flex justify-center pt-4">
               <Button
                 type="submit"
                 variant="commerce"
                 className="px-8"
+                disabled={isSubmitting}
               >
-                Create Account
+                {isSubmitting ? 'Submitting…' : 'Create Account'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
-    </section>
+    </>
   );
 };
 

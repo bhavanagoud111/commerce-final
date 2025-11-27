@@ -12,6 +12,18 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.production
+.env.development
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

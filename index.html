@@ -2,21 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Commerce Bank - Personal & Business Banking Solutions</title>
-    <meta name="description" content="Commerce Bank offers comprehensive personal and business banking services including checking, savings, loans, mortgages, and investment solutions. FDIC insured with over 150 years of trusted service." />
-    <meta name="author" content="Commerce Bank" />
-
-    <meta property="og:title" content="Commerce Bank - Personal & Business Banking Solutions" />
-    <meta property="og:description" content="Commerce Bank offers comprehensive personal and business banking services including checking, savings, loans, mortgages, and investment solutions. FDIC insured with over 150 years of trusted service." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <title>Commerce Bank - Digital Banking</title>
+    <script>
+      // Suppress Google Maps native error dialogs
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.includes('Google Maps') || e.message.includes('maps.googleapis.com') || e.message.includes('gm_authFailure'))) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }, true);
+    </script>
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

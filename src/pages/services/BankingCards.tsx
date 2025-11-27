@@ -11,9 +11,9 @@ const BankingCards = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
-        <section className="py-16 bg-gradient-to-r from-[hsl(var(--commerce-green))] to-[hsl(var(--commerce-teal))]">
+        <section className="pt-16 pb-16 bg-gradient-to-r from-[hsl(var(--commerce-green))] to-[hsl(var(--commerce-teal))]">
           <div className="container mx-auto px-4">
             <div className="flex items-center mb-6">
               <Link to="/">
@@ -31,9 +31,11 @@ const BankingCards = () => {
                 <p className="text-xl text-white/90 mb-8">
                   Complete banking solutions with checking accounts, savings, credit cards, and debit cards designed for your financial needs.
                 </p>
-                <Button variant="secondary" size="lg">
-                  Open an Account
-                </Button>
+                <Link to="/personal-banking">
+                  <Button variant="secondary" size="lg">
+                    Open an Account
+                  </Button>
+                </Link>
               </div>
               <div className="lg:text-center">
                 <img 
@@ -187,11 +189,6 @@ const BankingCards = () => {
               </div>
             </div>
 
-            <div className="text-center mt-12">
-              <Button variant="commerce" size="lg" className="text-lg px-8">
-                Get Started Today
-              </Button>
-            </div>
           </div>
         </section>
       </main>
