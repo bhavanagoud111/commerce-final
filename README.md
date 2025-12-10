@@ -2,14 +2,14 @@
 
 Complete setup guide for deploying the Commerce Bank digital banking application.
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
 - **npm** (comes with Node.js)
 - **Docker** and **Docker Compose** - [Download](https://www.docker.com/)
 - **Git** (for cloning)
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Install Dependencies
 
@@ -103,7 +103,7 @@ npm run dev
 - **Frontend**: http://localhost:8080
 - **Backend API**: http://localhost:3001
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 commerce-updated/
@@ -118,7 +118,7 @@ commerce-updated/
 └── package.json           # Dependencies
 ```
 
-## 🗄️ Database Setup
+## Database Setup
 
 The database tables are **automatically created** when you start the backend server. No manual setup needed!
 
@@ -133,7 +133,7 @@ The application creates these tables:
 - `business_accounts` - Business accounts
 - `branches` - Branch/ATM locations
 
-## 🔧 Available Commands
+## Available Commands
 
 ```bash
 # Development
@@ -148,7 +148,7 @@ npm run docker:down     # Stop MySQL container
 npm run build          # Build frontend for production
 ```
 
-## 🧪 Testing the Setup
+##Testing the Setup
 
 1. **Create an Account:**
    - Go to http://localhost:8080
@@ -167,7 +167,7 @@ npm run build          # Build frontend for production
    - Schedule payments
    - Manage cards
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Database Connection Error
 
@@ -201,7 +201,7 @@ Change ports in `.env`:
 2. Check `VITE_API_URL` in `.env` matches backend URL
 3. Verify CORS is enabled in backend
 
-## 📦 Production Deployment
+## Production Deployment
 
 ### Backend Deployment
 
@@ -220,14 +220,14 @@ Change ports in `.env`:
 
 3. Update `VITE_API_URL` to your production backend URL
 
-## 🔐 Security Notes
+## Security Notes
 
 - **Never commit `.env` file** to version control
 - Use strong, unique `JWT_SECRET` in production
 - Keep Gmail App Password secure
 - Use HTTPS in production
 
-## 📞 Support
+## Support
 
 If you encounter issues:
 1. Check backend console logs
@@ -235,7 +235,7 @@ If you encounter issues:
 3. Verify all environment variables are set
 4. Ensure Docker MySQL container is running
 
-## ✅ Checklist
+## Checklist
 
 Before deploying, ensure:
 - [ ] All dependencies installed (`npm install`)
