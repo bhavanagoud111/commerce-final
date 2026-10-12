@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node mysql-backend.cjs",
+    "start": "node --env-file=.env mysql-backend.cjs",
     "start:sqlite": "node database-backend.cjs",
     "db:setup": "node setup-mysql.cjs",
     "db:setup:docker": "node setup-mysql-docker.cjs",
