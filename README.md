@@ -1,10 +1,29 @@
 # Commerce Bank - Digital Banking Application
 
-Complete setup guide for deploying the Commerce Bank digital banking application.
+A full-stack digital banking web app. The frontend is React + TypeScript + Vite. The backend is an Express server backed by MySQL.
+
+## Features
+
+- **Authentication.** Registration and username/password login, followed by a 6-digit one-time code sent by email (Nodemailer + Gmail SMTP). Sessions use JWTs, protected routes guard signed-in pages, and an inactivity timeout signs users out.
+- **Dashboard and accounts.** Account balances, transaction history and spending charts (Recharts).
+- **Payments.** Transfers between your own accounts, and sending money to another user after checking the recipient's email.
+- **Applications.** Forms for opening accounts, loans and business accounts. Each submission is stored in MySQL with a status.
+- **Profile.** Profile details, password change and in-app notifications.
+- **Branch locator.** Lists branch and ATM locations from the backend and opens them in Google Maps.
+- **Chat assistant.** A banking chat widget that calls the OpenAI Chat Completions API when `VITE_OPENAI_API_KEY` is set. This is optional.
+- **Marketing pages.** Personal, business, corporate and wealth banking pages, service pages, and About, Careers, News, Contact, Security and legal pages.
+
+## Tech Stack
+
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix UI), React Router, TanStack Query, Recharts
+- **Backend:** Node.js, Express, MySQL (`mysql2`), JWT, bcryptjs, Nodemailer
+- **Database:** MySQL 8.0 via Docker Compose
+
+---
 
 ## Prerequisites
 
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
+- **Node.js** (v20.6 or higher, needed for `--env-file`) - [Download](https://nodejs.org/)
 - **npm** (comes with Node.js)
 - **Docker** and **Docker Compose** - [Download](https://www.docker.com/)
 - **Git** (for cloning)
@@ -27,10 +46,6 @@ cp .env.example .env
 2. Open `.env` and configure all variables:
 
 ```env
-# Server Ports
-PORT=3001
-VITE_PORT=8080
-
 # JWT Secret (IMPORTANT: Generate a strong random key!)
 # Generate one: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 JWT_SECRET=your_strong_random_secret_key_here
@@ -50,8 +65,6 @@ SMTP_PASS=your_gmail_app_password_16_characters
 VITE_OPENAI_API_KEY=sk-your-openai-api-key
 VITE_OPENAI_MODEL=gpt-4o-mini
 
-# Frontend API Endpoint
-VITE_API_URL=http://localhost:3001
 ```
 
 **Important Configuration Steps:**
@@ -106,7 +119,7 @@ npm run dev
 ## Project Structure
 
 ```
-commerce-updated/
+./
 ├── src/                    # Frontend React app
 │   ├── components/         # UI components
 │   ├── pages/             # Page components
@@ -126,8 +139,6 @@ The application creates these tables:
 - `users` - User accounts
 - `accounts` - Bank accounts
 - `transactions` - All transactions
-- `scheduled_transfers` - Recurring transfers
-- `scheduled_bills` - Recurring bills
 - `account_applications` - Account applications
 - `loan_applications` - Loan applications
 - `business_accounts` - Business accounts
@@ -148,7 +159,7 @@ npm run docker:down     # Stop MySQL container
 npm run build          # Build frontend for production
 ```
 
-##Testing the Setup
+## Testing the Setup
 
 1. **Create an Account:**
    - Go to http://localhost:8080
@@ -184,9 +195,9 @@ docker-compose restart mysql
 
 ### Port Already in Use
 
-Change ports in `.env`:
-- `PORT=3001` (backend)
-- `VITE_PORT=8080` (frontend)
+The ports are set in code, not in `.env`:
+- Backend: `PORT` constant in `mysql-backend.cjs` (3001)
+- Frontend: `server.port` in `vite.config.ts` (8080)
 
 ### OTP Emails Not Sending
 
@@ -198,7 +209,7 @@ Change ports in `.env`:
 ### Frontend Can't Connect to Backend
 
 1. Ensure backend is running on port 3001
-2. Check `VITE_API_URL` in `.env` matches backend URL
+2. The frontend calls the backend at `http://localhost:3001`. This URL is hard-coded in the files under `src/`.
 3. Verify CORS is enabled in backend
 
 ## Production Deployment
@@ -218,7 +229,7 @@ Change ports in `.env`:
    - AWS S3
    - Any static host
 
-3. Update `VITE_API_URL` to your production backend URL
+3. Update the hard-coded `http://localhost:3001` API URLs in `src/` to your production backend URL
 
 ## Security Notes
 
